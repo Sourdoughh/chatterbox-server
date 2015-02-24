@@ -46,7 +46,7 @@ var requestHandler = function(request, response) {
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
+  // response.writeHead(statusCode, headers);
 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
@@ -57,21 +57,24 @@ var requestHandler = function(request, response) {
   // node to actually send all the data over to the client.
   // response.end('Hello, World!');
   //
+  //
 
+  /////////////////////////////////////////////////////////////////////////////////////////////
   if (request.url === '/classes/messages') {
     if(request.method === 'GET') {
       // response.writeHead(statusCode, headers);
       // response.writeHead(200, {'Content-Type': 'text/html'});
+      response.writeHead(200, headers);
       response.write(JSON.stringify(serverData));
       response.end();
-    }
-  } else if(request.method === 'OPTIONS') {
+    } else if(request.method === 'OPTIONS') {
+      response.writeHead(200, headers);
       response.end('something!');
-  } else if (request.url === '/classes/messages/send') {
-    if(request.method === 'POST') {
+    } else if(request.method === 'POST') {
+      response.writeHead(201, headers);
       var requestBody;
       request.on('data', function(data) {
-        console.log(JSON.parse(data));
+        // console.log(JSON.parse(data));
         requestBody = data;
         // if(requestBody.length > 1e7) {
         //   response.writeHead(413, 'Request Entity Too Large', {'Content-Type': 'text/html'});
@@ -80,9 +83,38 @@ var requestHandler = function(request, response) {
       });
       request.on('end', function() {
         serverData.results.push(JSON.parse(requestBody));
-        console.log(serverData);
+        // console.log(serverData);
       });
-      response.end(serverData);
+      response.end(JSON.stringify(serverData));
+    }
+  }
+  else if (request.url === '/classes/room') {
+    if(request.method === 'GET') {
+      // response.writeHead(statusCode, headers);
+      // response.writeHead(200, {'Content-Type': 'text/html'});
+      response.writeHead(200, headers);
+      // console.log(response);
+      // response.write(JSON.stringify(serverData));
+      response.end(JSON.stringify(serverData));
+    } else if(request.method === 'OPTIONS') {
+      response.writeHead(200, headers);
+      response.end('something!');
+    } else if(request.method === 'POST') {
+      response.writeHead(201, headers);
+      var requestBody;
+      request.on('data', function(data) {
+        // console.log(JSON.parse(data));
+        requestBody = data;
+        // if(requestBody.length > 1e7) {
+        //   response.writeHead(413, 'Request Entity Too Large', {'Content-Type': 'text/html'});
+        //   response.end('<!doctype html><html><head><title>413</title></head><body>413: Request Entity Too Large</body></html>');
+        // }
+      });
+      request.on('end', function() {
+        serverData.results.push(JSON.parse(requestBody));
+        // console.log(serverData);
+      });
+      response.end(); //JSON.stringify(serverData)
     }
   }
    else {
@@ -119,4 +151,4 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
-module.exports.rh = requestHandler;
+module.exports.requestHandler = requestHandler;
