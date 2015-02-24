@@ -11,6 +11,9 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
+var fs = require('fs');
+var serverData = {results: []}; //{username: 'Json', text: 'hey', roomname: 'hr24'}
+
 
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
@@ -27,7 +30,7 @@ var requestHandler = function(request, response) {
   // Adding more logging to your server can be an easy way to get passive
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
-  console.log("Serving request type " + request.method + " for url " + request.url);
+  console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
   // The outgoing status.
   var statusCode = 200;
@@ -39,7 +42,7 @@ var requestHandler = function(request, response) {
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = "text/plain";
+  headers['Content-Type'] = 'application/json';
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
@@ -50,10 +53,55 @@ var requestHandler = function(request, response) {
   // response.end() will be the body of the response - i.e. what shows
   // up in the browser.
   //
-  // Calling .end "flushes" the response's internal buffer, forcing
+  // Calling .end 'flushes' the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end("Hello, World!");
+  // response.end('Hello, World!');
+  //
+
+  if (request.url === '/classes/messages') {
+    if(request.method === 'GET') {
+      // response.writeHead(statusCode, headers);
+      // response.writeHead(200, {'Content-Type': 'text/html'});
+      response.write(JSON.stringify(serverData));
+      response.end();
+    }
+  } else if(request.method === 'OPTIONS') {
+      response.end('something!');
+  } else if (request.url === '/classes/messages/send') {
+    if(request.method === 'POST') {
+      var requestBody;
+      request.on('data', function(data) {
+        console.log(JSON.parse(data));
+        requestBody = data;
+        // if(requestBody.length > 1e7) {
+        //   response.writeHead(413, 'Request Entity Too Large', {'Content-Type': 'text/html'});
+        //   response.end('<!doctype html><html><head><title>413</title></head><body>413: Request Entity Too Large</body></html>');
+        // }
+      });
+      request.on('end', function() {
+        serverData.results.push(JSON.parse(requestBody));
+        console.log(serverData);
+      });
+      response.end(serverData);
+    }
+  }
+   else {
+    response.writeHead(404, 'Resource Not Found', {'Content-Type': 'text/plain'});
+    response.end('404'); //'<!doctype html><html><head><title>404</title></head><body>404: Resource Not Found</body></html>'
+  }
 };
+    // else {
+    //   // response.writeHead(statusCode, headers);
+    //   response.writeHead(200, {'Content-Type': 'text/html'});
+    //   var html =  fs.readFileSync('./client/index.html', 'utf-8');
+    //   // fs.readFile('./client/index.html', function(err, html) {
+    //   //   console.log(html);
+    //   //   response.write(JSON.stringify(html));
+    //   // });
+    //   // console.log(html);
+    //   response.write(html);
+    //   response.end();
+    // }
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
 // This code allows this server to talk to websites that
@@ -65,9 +113,10 @@ var requestHandler = function(request, response) {
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
 var defaultCorsHeaders = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "access-control-allow-headers": "content-type, accept",
-  "access-control-max-age": 10 // Seconds.
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept',
+  'access-control-max-age': 10 // Seconds.
 };
 
+module.exports.rh = requestHandler;
